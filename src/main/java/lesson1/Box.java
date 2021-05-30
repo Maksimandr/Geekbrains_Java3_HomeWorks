@@ -75,14 +75,15 @@ public class Box<T extends Fruit> {
         fruits.clear();
     }
 
-    /**
-     * Добавляет один фрукт
-     *
-     * @param fruit добавляемый фрукт
-     */
-    public void add(T fruit) {
-        fruits.add(fruit);
-    }
+//        box.addAll(fruits.toArray()); //не работает, т.к. возвращает массив Object'ов
+//        box.addAll(fruits.toArray(new T[0])); // тоже не работает, т.к. не дает создать массив T[0], даже если сделать
+// класс Fruit не абстрактным
+
+// хотел сделать такую реализацию, чтобы один или несколько фруктов добавлять в одном методе, но не смог найти способа
+// преобразовать коллекцию в массив типа T[]
+//        public void addAll(T... fruits) {
+//        this.fruits.addAll(Arrays.asList(fruits));
+//    }
 
     /**
      * Добавляет несколько фруктов
@@ -91,6 +92,15 @@ public class Box<T extends Fruit> {
      */
     public void addAll(Collection<T> fruits) {
         this.fruits.addAll(fruits);
+    }
+
+    /**
+     * Добавляет один фрукт
+     *
+     * @param fruit добавляемый фрукт
+     */
+    public void add(T fruit) {
+        fruits.add(fruit);
     }
 
     /**

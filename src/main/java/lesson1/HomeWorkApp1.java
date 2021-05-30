@@ -15,7 +15,7 @@ public class HomeWorkApp1<T> {
         return array;
     }
 
-    public static <T> List<T> ArrayToList(T... array) {
+    public static <T> List<T> arrayToList(T... array) {
         return Arrays.asList(array);
     }
 
@@ -26,17 +26,17 @@ public class HomeWorkApp1<T> {
         //[a, b, c, d, e]
         System.out.println(Arrays.toString(strings));
         //[a, c, b, d, e]
-        System.out.println(Arrays.toString(HomeWorkApp1.swap(1, 2, strings)));
+        System.out.println(Arrays.toString(swap(1, 2, strings)));
 
         //[1, 2, 3, 4, 5]
         System.out.println(Arrays.toString(integers));
         //[5, 2, 3, 4, 1]
-        System.out.println(Arrays.toString(HomeWorkApp1.swap(0, 4, integers)));
+        System.out.println(Arrays.toString(swap(0, 4, integers)));
 
         //java.lang.String
         System.out.println(strings.getClass().getName());
         //java.util.Arrays$ArrayList
-        System.out.println(ArrayToList(integers).getClass().getName());
+        System.out.println(arrayToList(integers).getClass().getName());
 
     }
 }

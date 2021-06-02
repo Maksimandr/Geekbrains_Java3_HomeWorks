@@ -3,6 +3,7 @@ package lesson1;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * 3. Большая задача:
@@ -24,7 +25,7 @@ import java.util.Collection;
 public class Box<T extends Fruit> {
 
     // список фруктов в коробке
-    private ArrayList<T> fruits;
+    private List<T> fruits;
     // тип фруктов в коробке
     private String fruitType = null;
 
@@ -54,10 +55,9 @@ public class Box<T extends Fruit> {
      * Сравнивает веса текущей и сравниваемой коробок
      *
      * @param box сравниваемая коробка
-     * @param <B> тип объекта (наследуется от класса Box)
      * @return true если веса равны
      */
-    public <B extends Box> boolean compare(B box) {
+    public boolean compare(Box<?> box) {
         return Math.abs(this.getWeight() - box.getWeight()) < 0.0001;
     }
 
@@ -65,9 +65,8 @@ public class Box<T extends Fruit> {
      * Метод пересыпает фрукты из текущей коробки в указанную
      *
      * @param box коробка в которую пересыпаются все фрукты
-     * @param <B> тип объекта (наследуется от класса Box)
      */
-    public <B extends Box> void put(B box) {
+    public void put(Box<T> box) {
         if (!this.getFruitType().equals(box.getFruitType())) {
             throw new IllegalArgumentException("Проверь соответствие типов фруктов в коробках");
         }
@@ -108,7 +107,7 @@ public class Box<T extends Fruit> {
      *
      * @return список фруктов в коробке
      */
-    public ArrayList<T> getFruits() {
+    public List<T> getFruits() {
         return fruits;
     }
 

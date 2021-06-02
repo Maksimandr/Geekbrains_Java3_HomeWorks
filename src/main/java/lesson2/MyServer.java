@@ -19,7 +19,7 @@ public class MyServer {
 
     public MyServer() {
         try (ServerSocket server = new ServerSocket(ChatConstants.PORT)) {
-            authService = new BaseAuthService();
+            authService = new DataBaseAuthService();
             authService.start();
             clients = new ArrayList<>();
             while (true) {
@@ -44,12 +44,6 @@ public class MyServer {
 
     public synchronized boolean isNickBusy(String nick) {
         return clients.stream().anyMatch(client -> client.getName().equals(nick));
-       /* for (ClientHandler client : clients) {
-            if (client.getName().equals(nick)) {
-                return true;
-            }
-        }
-        return false;*/
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
@@ -69,9 +63,6 @@ public class MyServer {
      */
     public synchronized void broadcastMessage(String message) {
         clients.forEach(client -> client.sendMsg(message));
-        /*for (ClientHandler client : clients) {
-            client.sendMsg(message);
-        }*/
     }
 
     /**
@@ -113,12 +104,6 @@ public class MyServer {
      * @param nicknames    список получателей сообщения
      */
     public synchronized void sendToGroup(List<String> splitMessage, String name, List<String> nicknames) {
-//        сначала сделал так
-//        StringBuilder message = new StringBuilder();
-//        message.append("[").append(name).append("]:");
-//        for (int i = nicknames.size() + 1; i < splitMessage.size(); i++) {
-//            message.append(" ").append(splitMessage.get(i));
-//        }
         String message = "[" + name + "]: " +
                 splitMessage.stream()
                         .skip(nicknames.size() + 1)
@@ -128,13 +113,15 @@ public class MyServer {
                 .forEach(c -> c.sendMsg(message));
     }
 
+    /**
+     * выводит в чат список подключенных клиентов
+     */
     public synchronized void broadcastClients() {
         String clientsMessage = ChatConstants.CLIENTS_LIST +
                 " " +
                 clients.stream()
                         .map(ClientHandler::getName)
                         .collect(Collectors.joining(" "));
-        // /client nick1 nick2 nick3
         clients.forEach(c -> c.sendMsg(clientsMessage));
     }
 }

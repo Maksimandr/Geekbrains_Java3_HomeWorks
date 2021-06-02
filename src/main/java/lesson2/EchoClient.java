@@ -101,19 +101,14 @@ public class EchoClient extends JFrame {
         chatArea.setLineWrap(true);
         add(new JScrollPane(chatArea), BorderLayout.CENTER);
 
-        //down pannel
         JPanel panel = new JPanel(new BorderLayout());
         inputField = new JTextField();
-        // inputField.setBounds(100, 100, 150, 30);
         panel.add(inputField, BorderLayout.CENTER);
-
         JButton sendButton = new JButton("Send");
         panel.add(sendButton, BorderLayout.EAST);
 
         add(panel, BorderLayout.SOUTH);
-
         sendButton.addActionListener(e -> sendMessage());
-
         inputField.addActionListener(e -> sendMessage());
 
         addWindowListener(new WindowAdapter() {

@@ -79,7 +79,11 @@ public class MyServer {
                 .skip(1)
                 .takeWhile(word -> clients.stream().anyMatch(c -> c.getName().equals(word)))
                 .collect(Collectors.toList());
-        sendToGroup(splitMessage, name, nicknames);
+        String message = "[" + name + "]: " +
+                splitMessage.stream()
+                        .skip(nicknames.size() + 1)
+                        .collect(Collectors.joining(" "));
+        sendToGroup(message, nicknames);
     }
 
     /**
@@ -93,21 +97,20 @@ public class MyServer {
         List<String> splitMessage = Arrays.asList(messageFromClient.split("\\s+"));
         // берем второе слово из сообщения, которое указывает ник получателя (дальше остается само сообщение)
         List<String> nicknames = Collections.singletonList(splitMessage.get(1));
-        sendToGroup(splitMessage, name, nicknames);
+        String message = "[" + name + "]: " +
+                splitMessage.stream()
+                        .skip(nicknames.size() + 1)
+                        .collect(Collectors.joining(" "));
+        sendToGroup(message, nicknames);
     }
 
     /**
      * Мептод отправляет сообщение заданному списку клиентов
      *
-     * @param splitMessage сообщение, разбитое на части
-     * @param name         имя отправителя
-     * @param nicknames    список получателей сообщения
+     * @param message   сообщение, разбитое на части
+     * @param nicknames список получателей сообщения
      */
-    public synchronized void sendToGroup(List<String> splitMessage, String name, List<String> nicknames) {
-        String message = "[" + name + "]: " +
-                splitMessage.stream()
-                        .skip(nicknames.size() + 1)
-                        .collect(Collectors.joining(" "));
+    public synchronized void sendToGroup(String message, List<String> nicknames) {
         clients.stream()
                 .filter(c -> nicknames.contains(c.getName()))
                 .forEach(c -> c.sendMsg(message));
@@ -123,5 +126,31 @@ public class MyServer {
                         .map(ClientHandler::getName)
                         .collect(Collectors.joining(" "));
         clients.forEach(c -> c.sendMsg(clientsMessage));
+    }
+
+    public synchronized void changeClientName(String messageFromClient, String name) {
+        // разбиваем собщение на части
+        List<String> splitMessage = Arrays.asList(messageFromClient.split("\\s+"));
+        System.out.println(messageFromClient);
+        // берем второе слово из сообщения, которое указывает на новый ник клиента
+        List<String> newName = Collections.singletonList(splitMessage.get(1));
+        List<String> nicknames = new ArrayList<>();
+        nicknames.add(name);
+
+        if (newName.isEmpty()) {
+            sendToGroup("[" + ChatConstants.MSG_FROM_SERVER + "]: " + "Новое имя не может быть пустым!", nicknames);
+        } else if (isNickBusy(newName.get(0))) {
+            String message = "[" + ChatConstants.MSG_FROM_SERVER + "]: " +
+                    splitMessage.stream()
+                            .skip(1)
+                            .collect(Collectors.joining(" ")) + " - такой ник уже используется";
+            personalMessage(message, ChatConstants.MSG_FROM_SERVER);
+        }
+        clients.stream()
+                .filter(c -> c.getName().equals(name))
+                .map(c -> c.setName(newName.get(0)));
+        if (clients.stream().filter(c -> c.getName().equals(newName)).collect(Collectors.toList()).isEmpty()) {
+
+        }
     }
 }

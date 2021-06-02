@@ -18,6 +18,10 @@ public class ChatConstants {
 
     public static final String CLIENTS_LIST = "/clients";
 
+    public static final String CHANGE_NAME = "/rename";
+
+    public static final String MSG_FROM_SERVER = "/message from server";
+
     public static final long CLIENT_AUTH_TIMEOUT = 120_000;
 
 }

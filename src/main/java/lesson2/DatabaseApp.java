@@ -2,6 +2,9 @@ package lesson2;
 
 import java.sql.*;
 
+/**
+ * код с урока проверять не надо
+ */
 public class DatabaseApp {
 
     private static final String DATABASE_URL = "jdbc:sqlite:javadb.db";

@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,6 +19,11 @@ public class ClientHandler {
     private String name;
 
     public String getName() {
+        return name;
+    }
+
+    public String setName(String name) {
+        this.name = name;
         return name;
     }
 
@@ -77,6 +80,8 @@ public class ClientHandler {
                 server.personalMessage(messageFromClient, name);
             } else if (messageFromClient.startsWith(ChatConstants.CLIENTS_LIST)) {
                 server.broadcastClients();
+            } else if (messageFromClient.startsWith(ChatConstants.CHANGE_NAME)) {
+                server.changeClientName(messageFromClient, name);
             } else {
                 server.broadcastMessage("[" + name + "]: " + messageFromClient);
             }

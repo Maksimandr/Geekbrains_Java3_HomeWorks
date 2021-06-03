@@ -20,4 +20,14 @@ public interface AuthService {
      * Получить никнейм
      */
     Optional<String> getNickByLoginAndPass(String login, String pass);
+
+    /**
+     * Поменять свой ник на другой
+     */
+    boolean changeNick(String nick, String newNick);
+
+    /**
+     * Проверяет наличие ника в БД
+     */
+    boolean isNickExist(String nick);
 }

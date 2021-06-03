@@ -18,15 +18,6 @@ public class ClientHandler {
 
     private String name;
 
-    public String getName() {
-        return name;
-    }
-
-    public String setName(String name) {
-        this.name = name;
-        return name;
-    }
-
     public ClientHandler(MyServer server, Socket socket) {
         try {
             this.server = server;
@@ -68,6 +59,11 @@ public class ClientHandler {
         }
     }
 
+    /**
+     * Обрабатывает сообщение отпользователя
+     *
+     * @throws IOException
+     */
     private void readMessages() throws IOException {
         while (true) {
             String messageFromClient = inputStream.readUTF();
@@ -81,15 +77,18 @@ public class ClientHandler {
             } else if (messageFromClient.startsWith(ChatConstants.CLIENTS_LIST)) {
                 server.broadcastClients();
             } else if (messageFromClient.startsWith(ChatConstants.CHANGE_NAME)) {
-                server.changeClientName(messageFromClient, name);
+                server.changeClientName(messageFromClient, name, this);
             } else {
                 server.broadcastMessage("[" + name + "]: " + messageFromClient);
             }
-
         }
     }
 
-    // /auth login pass
+    /**
+     * Авторизует пользователя на сервере
+     *
+     * @throws IOException
+     */
     private void authentification() throws IOException {
         while (true) {
             String message = inputStream.readUTF();
@@ -97,15 +96,15 @@ public class ClientHandler {
                 String[] parts = message.split("\\s+");
                 Optional<String> nick = server.getAuthService().getNickByLoginAndPass(parts[1], parts[2]);
                 if (nick.isPresent()) {
-                    //проверим, что такого нет
-                    if (!server.isNickBusy(nick.get())) {
+                    //проверим, что такого уже нет онлайн
+                    if (!server.isClientOnline(nick.get())) {
                         sendMsg(ChatConstants.AUTH_OK + " " + nick);
                         name = nick.get();
                         server.subscribe(this);
                         server.broadcastMessage(name + " вошел в чат");
                         return;
                     } else {
-                        sendMsg("Ник уже используется");
+                        sendMsg("Такой ник уже авторизован");
                     }
                 } else {
                     sendMsg("Неверные логин/пароль");
@@ -114,6 +113,11 @@ public class ClientHandler {
         }
     }
 
+    /**
+     * Отправляет сообщение на сервер
+     *
+     * @param message сообщение
+     */
     public void sendMsg(String message) {
         try {
             outputStream.writeUTF(message);
@@ -140,5 +144,14 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String setName(String name) {
+        this.name = name;
+        return this.name;
     }
 }

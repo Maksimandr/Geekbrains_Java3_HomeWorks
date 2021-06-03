@@ -33,12 +33,12 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public void start() {
-        System.out.println(this.getClass().getName() +" server started");
+        System.out.println(this.getClass().getName() + " server started");
     }
 
     @Override
     public void stop() {
-        System.out.println(this.getClass().getName() +" server stopped");
+        System.out.println(this.getClass().getName() + " server stopped");
     }
 
     @Override
@@ -53,5 +53,15 @@ public class BaseAuthService implements AuthService {
             }
         }*/
         //return null;
+    }
+
+    @Override
+    public boolean changeNick(String nick, String newNick) {
+        return false;
+    }
+
+    @Override
+    public boolean isNickExist(String nick) {
+        return false;
     }
 }

@@ -21,13 +21,11 @@ import javax.swing.WindowConstants;
 public class EchoClient extends JFrame {
 
     private Socket socket;
-
-    private JTextArea chatArea;
-
-    private JTextField inputField;
-
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
+
+    private JTextArea chatArea;
+    private JTextField inputField;
 
     public EchoClient() {
         try {
@@ -54,13 +52,13 @@ public class EchoClient extends JFrame {
                     chatArea.append(strFromServer);
                     chatArea.append("\n");
                 }
-                //read
+                //read from server
                 while (true) {
                     String strFromServer = inputStream.readUTF();
                     if (strFromServer.equals(ChatConstants.STOP_WORD)) {
                         break;
                     } else if (strFromServer.startsWith(ChatConstants.CLIENTS_LIST)) {
-                        chatArea.append("Сейчас онлайн "+ strFromServer);
+                        chatArea.append("Сейчас онлайн " + strFromServer);
                     } else {
                         chatArea.append(strFromServer);
                     }
@@ -101,13 +99,19 @@ public class EchoClient extends JFrame {
         chatArea.setLineWrap(true);
         add(new JScrollPane(chatArea), BorderLayout.CENTER);
 
+        //Input panel
         JPanel panel = new JPanel(new BorderLayout());
+
+        //InputField
         inputField = new JTextField();
         panel.add(inputField, BorderLayout.CENTER);
+
+        //SendMessageButton
         JButton sendButton = new JButton("Send");
         panel.add(sendButton, BorderLayout.EAST);
 
         add(panel, BorderLayout.SOUTH);
+
         sendButton.addActionListener(e -> sendMessage());
         inputField.addActionListener(e -> sendMessage());
 
@@ -123,17 +127,13 @@ public class EchoClient extends JFrame {
                 }
             }
         });
-
         setVisible(true);
-
     }
 
     private void sendMessage() {
         if (!inputField.getText().trim().isEmpty()) {
             try {
                 outputStream.writeUTF(inputField.getText());
-                chatArea.append(inputField.getText());
-                chatArea.append("\n");
                 inputField.setText("");
                 inputField.grabFocus();
             } catch (IOException e) {
@@ -142,7 +142,6 @@ public class EchoClient extends JFrame {
             }
         }
     }
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(EchoClient::new);

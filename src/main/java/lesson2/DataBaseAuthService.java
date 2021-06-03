@@ -23,6 +23,9 @@ public class DataBaseAuthService implements AuthService {
     private static Connection connection;
     private static Statement statement;
 
+    /**
+     * В конструкторе задаем список клиентов для тестирования
+     */
     public DataBaseAuthService() {
         entries = List.of(
                 new Entry("nick_1", "l1", "p1"),
@@ -32,10 +35,13 @@ public class DataBaseAuthService implements AuthService {
         );
     }
 
+    /**
+     * Создает таблицу с указанными параметрами
+     */
     public void createTable() {
-        String createTable = "create table clients (" +
-                "id integer not null primary key, " +
-                "nick varchar(30) not null, " +
+        String createTable = "create table if not exists clients (" +
+                "id integer not null primary key autoincrement, " +
+                "nick varchar(30) not null unique, " +
                 "login varchar(30) not null, " +
                 "password varchar(30))";
         try {
@@ -46,6 +52,11 @@ public class DataBaseAuthService implements AuthService {
         }
     }
 
+    /**
+     * Метод записывает в базу список клиентов
+     *
+     * @param entries список клиентов
+     */
     public void insertNewClientPS(List<Entry> entries) {
         try (PreparedStatement preparedStatement =
                      connection.prepareStatement("insert into clients (nick, login, password) values (?, ?, ?)")) {
@@ -61,6 +72,9 @@ public class DataBaseAuthService implements AuthService {
         }
     }
 
+    /**
+     * Запуск сервиса
+     */
     @Override
     public void start() {
         try {
@@ -75,6 +89,9 @@ public class DataBaseAuthService implements AuthService {
         System.out.println(this.getClass().getName() + " server started");
     }
 
+    /**
+     * Закрытие сервиса
+     */
     @Override
     public void stop() {
         try {
@@ -90,6 +107,13 @@ public class DataBaseAuthService implements AuthService {
         System.out.println(this.getClass().getName() + " server stopped");
     }
 
+    /**
+     * Возвращает ник по заданной паре логин/пароль
+     *
+     * @param login логин
+     * @param pass  пароль
+     * @return ник в обёртке Optional<String>
+     */
     @Override
     public Optional<String> getNickByLoginAndPass(String login, String pass) {
         String sql = "select nick from clients where login = '" + login + "' and password = '" + pass + "'";
@@ -104,5 +128,49 @@ public class DataBaseAuthService implements AuthService {
             e.printStackTrace();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Меняет у клиента ник на новый
+     *
+     * @param nick    текущий ник
+     * @param newNick новый ник
+     * @return true если замена произошла, false если нет
+     */
+    @Override
+    public boolean changeNick(String nick, String newNick) {
+        String updateNick = "update clients set nick = '" + newNick + "' where nick = '" + nick + "'";
+        try {
+            int counter = statement.executeUpdate(updateNick);
+            if (counter > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            System.out.println("Не удалось поменять ник!");
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Проверяет наличие ника в БД
+     *
+     * @param nick ник
+     * @return true если ник существует, false если нет
+     */
+    @Override
+    public boolean isNickExist(String nick) {
+        String sql = "select nick from clients where nick = '" + nick + "'";
+        ResultSet resultSet;
+        try {
+            resultSet = statement.executeQuery(sql);
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString("nick"));
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

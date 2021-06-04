@@ -141,8 +141,9 @@ public class DataBaseAuthService implements AuthService {
     public boolean changeNick(String nick, String newNick) {
         String updateNick = "update clients set nick = '" + newNick + "' where nick = '" + nick + "'";
         try {
-            int counter = statement.executeUpdate(updateNick);
-            if (counter > 0) {
+            int rowCount = statement.executeUpdate(updateNick);
+            // если число обновленных строк больше чем ноль, значит обновили
+            if (rowCount > 0) {
                 return true;
             }
         } catch (SQLException e) {
@@ -161,11 +162,10 @@ public class DataBaseAuthService implements AuthService {
     @Override
     public boolean isNickExist(String nick) {
         String sql = "select nick from clients where nick = '" + nick + "'";
-        ResultSet resultSet;
         try {
-            resultSet = statement.executeQuery(sql);
-            while (resultSet.next()) {
-                System.out.println(resultSet.getString("nick"));
+            ResultSet resultSet = statement.executeQuery(sql);
+            if (resultSet.next()) {
+                // если resultSet не пустой значит такой ник уже есть в БД
                 return true;
             }
         } catch (SQLException e) {

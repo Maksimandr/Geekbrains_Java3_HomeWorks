@@ -27,7 +27,7 @@ public class ClientHandler {
             this.name = "";
             new Thread(() -> {
                 try {
-                    authentification();
+                    authentication();
                     readMessages();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -89,7 +89,7 @@ public class ClientHandler {
      *
      * @throws IOException
      */
-    private void authentification() throws IOException {
+    private void authentication() throws IOException {
         while (true) {
             String message = inputStream.readUTF();
             if (message.startsWith(ChatConstants.AUTH_COMMAND)) {

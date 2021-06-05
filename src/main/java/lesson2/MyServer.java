@@ -146,7 +146,7 @@ public class MyServer {
             message.append("Новое имя не может быть пустым!");
         } else if (authService.isNickExist(splitMessage.get(1))) { // проверяем есть ли в БД ник на который нужно поменять
             message.append("<").append(splitMessage.get(1)).append("> этот ник уже используется");
-        } else if (authService.changeNick(name, splitMessage.get(1))) { // если удалось поменять ник в БД меняем его в чате и оповещаем об этом всех
+        } else if (authService.changeNick(name, splitMessage.get(1))) { // если удалось поменять ник в БД меняем его в обработчике и оповещаем об этом всех
             clientHandler.setName(splitMessage.get(1));
             message.append("Пользователь с ником <").append(name).append("> изменил ник на <").append(splitMessage.get(1)).append(">");
             nicknames = clients.stream().map(ClientHandler::getName).collect(Collectors.toList());

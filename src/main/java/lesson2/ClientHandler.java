@@ -60,7 +60,7 @@ public class ClientHandler {
     }
 
     /**
-     * Обрабатывает сообщение отпользователя
+     * Обрабатывает сообщение от пользователя
      *
      * @throws IOException
      */
@@ -150,8 +150,7 @@ public class ClientHandler {
         return name;
     }
 
-    public String setName(String name) {
+    public void setName(String name) {
         this.name = name;
-        return this.name;
     }
 }

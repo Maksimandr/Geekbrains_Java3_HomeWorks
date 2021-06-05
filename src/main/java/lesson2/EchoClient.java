@@ -5,9 +5,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -19,15 +16,12 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import org.apache.commons.io.input.ReversedLinesFileReader;
-
 public class EchoClient extends JFrame {
 
     private Socket socket;
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
     private String historyFileName;
-    private final int historyLinesToLoad = 100;
 
     private JTextArea chatArea;
     private JTextField inputField;
@@ -53,12 +47,7 @@ public class EchoClient extends JFrame {
                     String strFromServer = inputStream.readUTF();
                     String[] splitStr = strFromServer.split("\\s+");
                     if (strFromServer.startsWith(ChatConstants.AUTH_OK) && splitStr.length > 1) {
-                        // создаем имя для файла истории чата по логину и загружаем историю если она есть
                         historyFileName = "history_" + splitStr[1] + ".txt";
-                        for (String str : loadChatHistory(historyFileName, historyLinesToLoad)) {
-                            chatArea.append(str);
-                            chatArea.append("\n");
-                        }
                         break;
                     }
                     chatArea.append(strFromServer);
@@ -67,15 +56,14 @@ public class EchoClient extends JFrame {
                 //read from server
                 while (true) {
                     String strFromServer = inputStream.readUTF();
+                    new Thread(() -> {
+                        writeToFile(strFromServer);
+                    }).start();
                     if (strFromServer.equals(ChatConstants.STOP_WORD)) {
                         break;
                     } else if (strFromServer.startsWith(ChatConstants.CLIENTS_LIST)) {
                         chatArea.append("Сейчас онлайн " + strFromServer);
                     } else {
-                        // записываем сообщение в историю в отдельном потоке
-                        new Thread(() -> {
-                            writeToFile(historyFileName, strFromServer);
-                        }).start();
                         chatArea.append(strFromServer);
                     }
                     chatArea.append("\n");
@@ -86,14 +74,8 @@ public class EchoClient extends JFrame {
         }).start();
     }
 
-    /**
-     * Записывает сообщение в файл
-     *
-     * @param fileName имя файла
-     * @param string   записываемое сообщение
-     */
-    private synchronized void writeToFile(String fileName, String string) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+    private synchronized void writeToFile(String string) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(historyFileName, true))) {
             writer.write(string);
             writer.newLine();
         } catch (IOException e) {
@@ -101,92 +83,30 @@ public class EchoClient extends JFrame {
         }
     }
 
-    /**
-     * Загружает из файла последние N строк
-     *
-     * @param historyFileName имя файла
-     * @param historyLines    количество последних строк для считывания
-     */
-    private List<String> loadChatHistory(String historyFileName, int historyLines) {
-        List<String> arrayList = new ArrayList<>();
+    private void loadChatHistory(int msgCount) {
         try (BufferedReader reader = new BufferedReader(new FileReader(historyFileName))) {
             String str;
             while ((str = reader.readLine()) != null) {
-                if (arrayList.size() >= historyLines) {
-                    arrayList.remove(0);
-                }
-                arrayList.add(str);
+                chatArea.append(str);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return arrayList;
     }
 
-    /**
-     * Попробовал реализовать через RandomAccessFile, но не получается нормально читать русские символы
-     *
-     * @param historyFileName имя файла
-     * @param historyLines    количество последних строк для считывания
-     */
-    private List<String> loadChatHistory2(String historyFileName, int historyLines) {
-        List<String> arrayList = new ArrayList<>();
-        List<String> reversedArrayList = new ArrayList<>();
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(new File(historyFileName), "r");) {
-            int lines = 0;
-            long length = randomAccessFile.length();
-            for (long pointer = length - 2; pointer >= 0; pointer--) {
-                randomAccessFile.seek(pointer);
-                int c = randomAccessFile.read();
-                if ((char) c == '\n' || pointer == 0) {
-                    if (pointer == 0) {
-                        randomAccessFile.seek(pointer);
-                    }
-                    arrayList.add(randomAccessFile.readLine());
-                    // readUTF тоже не помогает
-//                    String str = randomAccessFile.readUTF();
-                    lines++;
-                    if (lines == historyLines) {
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (arrayList.size() > 1) {
-            for (int i = arrayList.size() - 1; i >= 0; i--) {
-                reversedArrayList.add(arrayList.get(i));
+    private static String ReadLastLine(File file) throws FileNotFoundException, IOException {
+        String result = null;
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            long startIdx = file.length();
+            while (startIdx >= 0 && (result == null || result.length() == 0)) {
+                raf.seek(startIdx);
+                if (startIdx > 0)
+                    raf.readLine();
+                result = raf.readLine();
+                startIdx--;
             }
         }
-        return reversedArrayList;
-    }
-
-    private List<String> loadChatHistory3(String historyFileName, int historyLines) {
-        File file = new File(historyFileName);
-        List<String> arrayList = new ArrayList<>();
-        List<String> reversedArrayList = new ArrayList<>();
-        String line;
-        int counter = 0;
-        try {
-            ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8);
-            while(counter < historyLines) {
-                line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                arrayList.add(line);
-                counter++;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (arrayList.size() > 1) {
-            for (int i = arrayList.size() - 1; i >= 0; i--) {
-                reversedArrayList.add(arrayList.get(i));
-            }
-        }
-        return reversedArrayList;
+        return result;
     }
 
     public void closeConnection() {

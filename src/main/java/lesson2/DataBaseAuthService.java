@@ -66,7 +66,7 @@ public class DataBaseAuthService implements AuthService {
                 preparedStatement.setString(3, entries.get(i - 1).pass);
                 preparedStatement.addBatch();
             }
-            int[] ints = preparedStatement.executeBatch();
+            preparedStatement.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -164,10 +164,8 @@ public class DataBaseAuthService implements AuthService {
         String sql = "select nick from clients where nick = '" + nick + "'";
         try {
             ResultSet resultSet = statement.executeQuery(sql);
-            if (resultSet.next()) {
-                // если resultSet не пустой значит такой ник уже есть в БД
-                return true;
-            }
+            // если resultSet не пустой значит такой ник уже есть в БД
+            return resultSet.next();
         } catch (SQLException e) {
             e.printStackTrace();
         }

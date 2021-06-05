@@ -61,8 +61,6 @@ public class ClientHandler {
 
     /**
      * Обрабатывает сообщение от пользователя
-     *
-     * @throws IOException
      */
     private void readMessages() throws IOException {
         while (true) {
@@ -86,8 +84,6 @@ public class ClientHandler {
 
     /**
      * Авторизует пользователя на сервере
-     *
-     * @throws IOException
      */
     private void authentication() throws IOException {
         while (true) {

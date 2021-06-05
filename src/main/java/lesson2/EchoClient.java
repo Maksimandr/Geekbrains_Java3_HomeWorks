@@ -3,9 +3,7 @@ package lesson2;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 
 import javax.swing.JButton;
@@ -23,6 +21,7 @@ public class EchoClient extends JFrame {
     private Socket socket;
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
+    private String historyFileName;
 
     private JTextArea chatArea;
     private JTextField inputField;
@@ -46,7 +45,9 @@ public class EchoClient extends JFrame {
                 //auth
                 while (true) {
                     String strFromServer = inputStream.readUTF();
-                    if (strFromServer.equals(ChatConstants.AUTH_OK)) {
+                    String[] splitStr = strFromServer.split("\\s+");
+                    if (strFromServer.startsWith(ChatConstants.AUTH_OK) && splitStr.length > 1) {
+                        historyFileName = "history_" + splitStr[1] + ".txt";
                         break;
                     }
                     chatArea.append(strFromServer);
@@ -55,6 +56,9 @@ public class EchoClient extends JFrame {
                 //read from server
                 while (true) {
                     String strFromServer = inputStream.readUTF();
+                    new Thread(() -> {
+                        writeToFile(strFromServer);
+                    }).start();
                     if (strFromServer.equals(ChatConstants.STOP_WORD)) {
                         break;
                     } else if (strFromServer.startsWith(ChatConstants.CLIENTS_LIST)) {
@@ -68,6 +72,41 @@ public class EchoClient extends JFrame {
                 ex.printStackTrace();
             }
         }).start();
+    }
+
+    private synchronized void writeToFile(String string) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(historyFileName, true))) {
+            writer.write(string);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadChatHistory(int msgCount) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(historyFileName))) {
+            String str;
+            while ((str = reader.readLine()) != null) {
+                chatArea.append(str);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String ReadLastLine(File file) throws FileNotFoundException, IOException {
+        String result = null;
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            long startIdx = file.length();
+            while (startIdx >= 0 && (result == null || result.length() == 0)) {
+                raf.seek(startIdx);
+                if (startIdx > 0)
+                    raf.readLine();
+                result = raf.readLine();
+                startIdx--;
+            }
+        }
+        return result;
     }
 
     public void closeConnection() {

@@ -86,7 +86,8 @@ public class EchoClient extends JFrame {
     /**
      * Записывает сообщение в файл
      *
-     * @param string записываемое сообщение
+     * @param fileName имя файла
+     * @param string   записываемое сообщение
      */
     private synchronized void writeToFile(String fileName, String string) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {

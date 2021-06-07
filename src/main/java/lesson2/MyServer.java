@@ -7,17 +7,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
- * Непосредственно сервер
+ * Непосредственно сервер c управлением потоками через ExecutorService
  */
 public class MyServer {
 
     private List<ClientHandler> clients;
     private AuthService authService;
+    private final ExecutorService executorService;
+    private final int MAX_TREADS = 10;
 
     public MyServer() {
+        executorService = Executors.newFixedThreadPool(MAX_TREADS);
         try (ServerSocket server = new ServerSocket(ChatConstants.PORT)) {
             authService = new DataBaseAuthService();
             authService.start();
@@ -34,11 +39,16 @@ public class MyServer {
             if (authService != null) {
                 authService.stop();
             }
+            executorService.shutdown();
         }
     }
 
     public AuthService getAuthService() {
         return authService;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     public synchronized boolean isClientOnline(String nick) {
@@ -140,7 +150,7 @@ public class MyServer {
         // изначально в список адресатов пишем только отправителя
         List<String> nicknames = Collections.singletonList(name);
         // делаем заготовку сообщения от сервера
-        StringBuilder message = new StringBuilder().append("[" + ChatConstants.MSG_FROM_SERVER + "]: ");
+        StringBuilder message = new StringBuilder().append(ChatConstants.MSG_FROM_SERVER + " ");
 
         if (splitMessage.size() < 2) { // если кроме команды /rename ничего нет то это нехорошо
             message.append("Новое имя не может быть пустым!");

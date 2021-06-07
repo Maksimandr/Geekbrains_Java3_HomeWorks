@@ -69,10 +69,12 @@ public class EchoClient extends JFrame {
                     } else if (strFromServer.startsWith(ChatConstants.CLIENTS_LIST)) {
                         chatArea.append("Сейчас онлайн " + strFromServer);
                     } else {
-                        // записываем сообщение в историю в отдельном потоке
-                        new Thread(() -> {
-                            writeToFile(historyFileName, strFromServer);
-                        }).start();
+                        // записываем сообщения от пользователей в историю в отдельном потоке
+                        if (strFromServer.startsWith("[")) {
+                            new Thread(() -> {
+                                writeToFile(historyFileName, strFromServer);
+                            }).start();
+                        }
                         chatArea.append(strFromServer);
                     }
                     chatArea.append("\n");

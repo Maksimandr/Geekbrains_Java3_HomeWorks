@@ -5,6 +5,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+
+import org.apache.commons.io.input.ReversedLinesFileReader;
 
 public class EchoClient extends JFrame {
 
@@ -122,6 +125,7 @@ public class EchoClient extends JFrame {
         return arrayList;
     }
 
+
     /**
      * Попробовал реализовать через RandomAccessFile, но не получается нормально читать русские символы
      *
@@ -129,6 +133,8 @@ public class EchoClient extends JFrame {
      * @param historyLines    количество последних строк для считывания
      */
     private List<String> loadChatHistory2(String historyFileName, int historyLines) {
+        List<String> arrayList = new ArrayList<>();
+        List<String> reversedArrayList = new ArrayList<>();
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(new File(historyFileName), "r");) {
             int lines = 0;
             long length = randomAccessFile.length();
@@ -139,11 +145,9 @@ public class EchoClient extends JFrame {
                     if (pointer == 0) {
                         randomAccessFile.seek(pointer);
                     }
-                    String str = randomAccessFile.readLine();
+                    arrayList.add(randomAccessFile.readLine());
                     // readUTF тоже не помогает
 //                    String str = randomAccessFile.readUTF();
-                    chatArea.append(str);
-                    chatArea.append("\n");
                     lines++;
                     if (lines == historyLines) {
                         break;
@@ -153,7 +157,39 @@ public class EchoClient extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new ArrayList<>();
+        if (arrayList.size() > 1) {
+            for (int i = arrayList.size() - 1; i >= 0; i--) {
+                reversedArrayList.add(arrayList.get(i));
+            }
+        }
+        return reversedArrayList;
+    }
+
+    private List<String> loadChatHistory3(String historyFileName, int historyLines) {
+        File file = new File(historyFileName);
+        List<String> arrayList = new ArrayList<>();
+        List<String> reversedArrayList = new ArrayList<>();
+        String line;
+        int counter = 0;
+        try {
+            ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8);
+        while(counter < historyLines) {
+            line = reader.readLine();
+            if (line == null) {
+                break;
+            }
+            arrayList.add(line);
+            counter++;
+        }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (arrayList.size() > 1) {
+            for (int i = arrayList.size() - 1; i >= 0; i--) {
+                reversedArrayList.add(arrayList.get(i));
+            }
+        }
+        return reversedArrayList;
     }
 
     public void closeConnection() {

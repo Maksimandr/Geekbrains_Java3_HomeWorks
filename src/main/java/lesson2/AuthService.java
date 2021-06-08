@@ -24,10 +24,14 @@ public interface AuthService {
     /**
      * Поменять свой ник на другой
      */
-    boolean changeNick(String nick, String newNick);
+    default boolean changeNick(String nick, String newNick) {
+        return false;
+    }
 
     /**
      * Проверяет наличие ника в БД
      */
-    boolean isNickExist(String nick);
+    default boolean isNickExist(String nick) {
+        return false;
+    }
 }

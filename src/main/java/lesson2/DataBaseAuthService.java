@@ -43,7 +43,7 @@ public class DataBaseAuthService implements AuthService {
                 "id integer not null primary key autoincrement, " +
                 "nick varchar(30) not null unique, " +
                 "login varchar(30) not null, " +
-                "password varchar(30) not null)";
+                "password varchar(30))";
         try {
             statement.execute(createTable);
         } catch (SQLException e) {
@@ -120,9 +120,10 @@ public class DataBaseAuthService implements AuthService {
         ResultSet resultSet;
         try {
             resultSet = statement.executeQuery(sql);
-            if (resultSet.next()) {
-                return Optional.ofNullable(resultSet.getString("nick"));
+            if (!resultSet.next()) {
+                return Optional.empty();
             }
+            return Optional.ofNullable(resultSet.getString("nick"));
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -41,6 +41,11 @@ public class EchoClient extends JFrame {
         initGUI();
     }
 
+    /**
+     * Открываются соединения и поток для получения и обработки сообщений от сервера
+     *
+     * @throws IOException
+     */
     private void openConnection() throws IOException {
         socket = new Socket(ChatConstants.HOST, ChatConstants.PORT);
         inputStream = new DataInputStream(socket.getInputStream());
@@ -102,20 +107,21 @@ public class EchoClient extends JFrame {
     }
 
     /**
-     * Загружает из файла последние N строк
+     * Загружает из файла последние N строк (читается построчно весь файл, что как-то нехорошо если файл будет большой)
      *
      * @param historyFileName имя файла
      * @param historyLines    количество последних строк для считывания
+     * @return список со строками истории чата
      */
     private List<String> loadChatHistory(String historyFileName, int historyLines) {
         List<String> arrayList = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(historyFileName))) {
-            String str;
-            while ((str = reader.readLine()) != null) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 if (arrayList.size() >= historyLines) {
                     arrayList.remove(0);
                 }
-                arrayList.add(str);
+                arrayList.add(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -128,6 +134,7 @@ public class EchoClient extends JFrame {
      *
      * @param historyFileName имя файла
      * @param historyLines    количество последних строк для считывания
+     * @return список со строками истории чата
      */
     private List<String> loadChatHistory2(String historyFileName, int historyLines) {
         List<String> arrayList = new ArrayList<>();
@@ -162,6 +169,13 @@ public class EchoClient extends JFrame {
         return reversedArrayList;
     }
 
+    /**
+     * Метод загружает из файла последние N строк через ReversedLinesFileReader
+     *
+     * @param historyFileName имя файла
+     * @param historyLines    количество последних строк для считывания
+     * @return список со строками истории чата
+     */
     private List<String> loadChatHistory3(String historyFileName, int historyLines) {
         File file = new File(historyFileName);
         List<String> arrayList = new ArrayList<>();
@@ -170,7 +184,7 @@ public class EchoClient extends JFrame {
         int counter = 0;
         try {
             ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8);
-            while(counter < historyLines) {
+            while (counter < historyLines) {
                 line = reader.readLine();
                 if (line == null) {
                     break;
@@ -189,6 +203,9 @@ public class EchoClient extends JFrame {
         return reversedArrayList;
     }
 
+    /**
+     * Освобождает ресурсы
+     */
     public void closeConnection() {
         try {
             inputStream.close();
@@ -207,6 +224,9 @@ public class EchoClient extends JFrame {
         }
     }
 
+    /**
+     * Создает окно чата
+     */
     public void initGUI() {
         setBounds(600, 300, 500, 500);
         setTitle("Клиент");
@@ -249,6 +269,9 @@ public class EchoClient extends JFrame {
         setVisible(true);
     }
 
+    /**
+     * Отсылает сообщение на сервер
+     */
     private void sendMessage() {
         if (!inputField.getText().trim().isEmpty()) {
             try {

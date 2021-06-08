@@ -1,24 +1,15 @@
 package lesson2;
 
+import model.User;
+
 import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 
+
 public class DataBaseAuthService implements AuthService {
 
-    private class Entry {
-        private final String nick;
-        private final String login;
-        private final String pass;
-
-        public Entry(String nick, String login, String pass) {
-            this.nick = nick;
-            this.login = login;
-            this.pass = pass;
-        }
-    }
-
-    private final List<Entry> entries;
+    private final List<User> userList;
     private static final String DATABASE_URL = "jdbc:sqlite:javadb.db";
     private static Connection connection;
     private static Statement statement;
@@ -27,12 +18,7 @@ public class DataBaseAuthService implements AuthService {
      * В конструкторе задаем список клиентов для тестирования
      */
     public DataBaseAuthService() {
-        entries = List.of(
-                new Entry("nick_1", "l1", "p1"),
-                new Entry("nick_2", "l2", "p2"),
-                new Entry("nick_3", "l3", "p3"),
-                new Entry("nick_4", "l4", "p4")
-        );
+        userList = User.getUserListTestingSample();
     }
 
     /**
@@ -55,15 +41,15 @@ public class DataBaseAuthService implements AuthService {
     /**
      * Метод записывает в базу список клиентов
      *
-     * @param entries список клиентов
+     * @param users список клиентов
      */
-    public void insertNewClientPS(List<Entry> entries) {
+    public void insertNewClientPS(List<User> users) {
         try (PreparedStatement preparedStatement =
                      connection.prepareStatement("insert into clients (nick, login, password) values (?, ?, ?)")) {
-            for (int i = 1; i <= entries.size(); i++) {
-                preparedStatement.setString(1, entries.get(i - 1).nick);
-                preparedStatement.setString(2, entries.get(i - 1).login);
-                preparedStatement.setString(3, entries.get(i - 1).pass);
+            for (int i = 1; i <= users.size(); i++) {
+                preparedStatement.setString(1, users.get(i - 1).getNick());
+                preparedStatement.setString(2, users.get(i - 1).getLogin());
+                preparedStatement.setString(3, users.get(i - 1).getPass());
                 preparedStatement.addBatch();
             }
             preparedStatement.executeBatch();
@@ -85,7 +71,7 @@ public class DataBaseAuthService implements AuthService {
             e.printStackTrace();
         }
         createTable();
-        insertNewClientPS(entries);
+        insertNewClientPS(userList);
         System.out.println(this.getClass().getName() + " server started");
     }
 
@@ -116,10 +102,11 @@ public class DataBaseAuthService implements AuthService {
      */
     @Override
     public Optional<String> getNickByLoginAndPass(String login, String pass) {
-        String sql = "select nick from clients where login = '" + login + "' and password = '" + pass + "'";
-        ResultSet resultSet;
-        try {
-            resultSet = statement.executeQuery(sql);
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement("select nick from clients where login = ? and password = ?")) {
+            preparedStatement.setString(1, login);
+            preparedStatement.setString(2, pass);
+            ResultSet resultSet = preparedStatement.executeQuery();
             if (!resultSet.next()) {
                 return Optional.empty();
             }
@@ -139,9 +126,11 @@ public class DataBaseAuthService implements AuthService {
      */
     @Override
     public boolean changeNick(String nick, String newNick) {
-        String updateNick = "update clients set nick = '" + newNick + "' where nick = '" + nick + "'";
-        try {
-            int rowCount = statement.executeUpdate(updateNick);
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement("update clients set nick = ? where nick = ?")) {
+            preparedStatement.setString(1, newNick);
+            preparedStatement.setString(2, nick);
+            int rowCount = preparedStatement.executeUpdate();
             // если число обновленных строк больше чем ноль, значит обновили
             if (rowCount > 0) {
                 return true;
@@ -161,9 +150,10 @@ public class DataBaseAuthService implements AuthService {
      */
     @Override
     public boolean isNickExist(String nick) {
-        String sql = "select nick from clients where nick = '" + nick + "'";
-        try {
-            ResultSet resultSet = statement.executeQuery(sql);
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement("select nick from clients where nick = ?")) {
+            preparedStatement.setString(1, nick);
+            ResultSet resultSet = preparedStatement.executeQuery();
             // если resultSet не пустой значит такой ник уже есть в БД
             return resultSet.next();
         } catch (SQLException e) {

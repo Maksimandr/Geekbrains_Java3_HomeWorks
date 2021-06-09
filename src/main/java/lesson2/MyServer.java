@@ -31,7 +31,7 @@ public class MyServer {
                     string = scanner.nextLine();
                     if (string.startsWith(ChatConstants.STOP_WORD)) {
                         broadcastMessage("Сервер остановлен");
-                        close();
+                        closeConnections();
                         try {
                             server.close();
                         } catch (IOException e) {
@@ -57,7 +57,7 @@ public class MyServer {
         }
     }
 
-    public void close() {
+    public void closeConnections() {
         for (int i = clients.size() - 1; i >= 0; i--) {
             clients.get(i).closeConnection();
         }

@@ -3,10 +3,7 @@ package lesson2;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -16,7 +13,7 @@ import java.util.stream.Collectors;
  */
 public class MyServer {
 
-    private List<ClientHandler> clients;
+    private volatile List<ClientHandler> clients;
     private AuthService authService;
     private final ExecutorService executorService;
     private final int MAX_TREADS = 10;
@@ -27,6 +24,23 @@ public class MyServer {
             authService = new DataBaseAuthService();
             authService.start();
             clients = new ArrayList<>();
+            executorService.execute(() -> {
+                Scanner scanner = new Scanner(System.in);
+                String string;
+                while (true) {
+                    string = scanner.nextLine();
+                    if (string.startsWith(ChatConstants.STOP_WORD)) {
+                        broadcastMessage("Сервер остановлен");
+                        close();
+                        try {
+                            server.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                }
+            });
             while (true) {
                 System.out.println("Сервер ожидает подключения");
                 Socket socket = server.accept();
@@ -40,6 +54,12 @@ public class MyServer {
                 authService.stop();
             }
             executorService.shutdown();
+        }
+    }
+
+    public void close() {
+        for (int i = clients.size() - 1; i >= 0; i--) {
+            clients.get(i).closeConnection();
         }
     }
 

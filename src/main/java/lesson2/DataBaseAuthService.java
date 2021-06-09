@@ -90,7 +90,7 @@ public class DataBaseAuthService implements AuthService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        System.out.println(this.getClass().getName() + " server stopped");
+        System.out.println(this.getClass().getName() + " service stopped");
     }
 
     /**

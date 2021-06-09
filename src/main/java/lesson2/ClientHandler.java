@@ -32,6 +32,7 @@ public class ClientHandler {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
+                    server.broadcastMessage(name + " вышел из чата");
                     closeConnection();
                 }
             });
@@ -125,7 +126,6 @@ public class ClientHandler {
 
     public void closeConnection() {
         server.unsubscribe(this);
-        server.broadcastMessage(name + " вышел из чата");
         try {
             inputStream.close();
         } catch (IOException e) {

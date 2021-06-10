@@ -24,6 +24,7 @@ public class MyServer {
             authService = new DataBaseAuthService();
             authService.start();
             clients = new ArrayList<>();
+            // добавил возможность остановить сервер командой из консоли
             executorService.execute(() -> {
                 Scanner scanner = new Scanner(System.in);
                 String string;

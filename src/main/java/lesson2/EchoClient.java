@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -26,8 +27,10 @@ public class EchoClient extends JFrame {
     private Socket socket;
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
-    private String historyFileName;
+    private File historyFile;
     private final int historyLinesToLoad = 100;
+    private BufferedReader fileReader;
+    private BufferedWriter fileWriter;
 
     private JTextArea chatArea;
     private JTextField inputField;
@@ -51,6 +54,7 @@ public class EchoClient extends JFrame {
         inputStream = new DataInputStream(socket.getInputStream());
         outputStream = new DataOutputStream(socket.getOutputStream());
 
+
         new Thread(() -> {
             try {
                 //auth
@@ -59,8 +63,10 @@ public class EchoClient extends JFrame {
                     String[] splitStr = strFromServer.split("\\s+");
                     if (strFromServer.startsWith(ChatConstants.AUTH_OK) && splitStr.length > 1) {
                         // создаем имя для файла истории чата по логину и загружаем историю если она есть
-                        historyFileName = "history_" + splitStr[1] + ".txt";
-                        for (String str : loadChatHistory(historyFileName, historyLinesToLoad)) {
+                        historyFile = new File("history_" + splitStr[1] + ".txt");
+                        fileReader = new BufferedReader(new FileReader(historyFile));
+                        fileWriter = new BufferedWriter(new FileWriter(historyFile, true));
+                        for (String str : loadChatHistory(historyLinesToLoad)) {
                             chatArea.append(str);
                             chatArea.append("\n");
                         }
@@ -79,7 +85,7 @@ public class EchoClient extends JFrame {
                     } else {
                         // записываем сообщение в историю в отдельном потоке
                         new Thread(() -> {
-                            writeToFile(historyFileName, strFromServer);
+                            writeToFile(strFromServer);
                         }).start();
                         chatArea.append(strFromServer);
                     }
@@ -94,13 +100,12 @@ public class EchoClient extends JFrame {
     /**
      * Записывает сообщение в файл
      *
-     * @param fileName имя файла
-     * @param string   записываемое сообщение
+     * @param string записываемое сообщение
      */
-    private synchronized void writeToFile(String fileName, String string) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
-            writer.write(string);
-            writer.newLine();
+    private synchronized void writeToFile(String string) {
+        try {
+            fileWriter.write(string);
+            fileWriter.newLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -109,37 +114,35 @@ public class EchoClient extends JFrame {
     /**
      * Загружает из файла последние N строк (читается построчно весь файл, что как-то нехорошо если файл будет большой)
      *
-     * @param historyFileName имя файла
      * @param historyLines    количество последних строк для считывания
      * @return список со строками истории чата
      */
-    private List<String> loadChatHistory(String historyFileName, int historyLines) {
-        List<String> arrayList = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(historyFileName))) {
+    private List<String> loadChatHistory(int historyLines) {
+        List<String> stringList = new LinkedList<>();
+        try {
             String line;
-            while ((line = reader.readLine()) != null) {
-                if (arrayList.size() >= historyLines) {
-                    arrayList.remove(0);
+            while ((line = fileReader.readLine()) != null) {
+                if (stringList.size() >= historyLines) {
+                    stringList.remove(0);
                 }
-                arrayList.add(line);
+                stringList.add(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return arrayList;
+        return stringList;
     }
 
     /**
      * Попробовал реализовать через RandomAccessFile, но не получается нормально читать русские символы
      *
-     * @param historyFileName имя файла
      * @param historyLines    количество последних строк для считывания
      * @return список со строками истории чата
      */
-    private List<String> loadChatHistory2(String historyFileName, int historyLines) {
+    private List<String> loadChatHistory2(int historyLines) {
         List<String> arrayList = new ArrayList<>();
         List<String> reversedArrayList = new ArrayList<>();
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(new File(historyFileName), "r");) {
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(historyFile, "r")) {
             int lines = 0;
             long length = randomAccessFile.length();
             for (long pointer = length - 2; pointer >= 0; pointer--) {
@@ -172,18 +175,16 @@ public class EchoClient extends JFrame {
     /**
      * Метод загружает из файла последние N строк через ReversedLinesFileReader
      *
-     * @param historyFileName имя файла
      * @param historyLines    количество последних строк для считывания
      * @return список со строками истории чата
      */
-    private List<String> loadChatHistory3(String historyFileName, int historyLines) {
-        File file = new File(historyFileName);
+    private List<String> loadChatHistory3(int historyLines) {
         List<String> arrayList = new ArrayList<>();
         List<String> reversedArrayList = new ArrayList<>();
         String line;
         int counter = 0;
         try {
-            ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8);
+            ReversedLinesFileReader reader = new ReversedLinesFileReader(historyFile, StandardCharsets.UTF_8);
             while (counter < historyLines) {
                 line = reader.readLine();
                 if (line == null) {
@@ -207,6 +208,16 @@ public class EchoClient extends JFrame {
      * Освобождает ресурсы
      */
     public void closeConnection() {
+        try {
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            fileReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         try {
             inputStream.close();
         } catch (IOException e) {

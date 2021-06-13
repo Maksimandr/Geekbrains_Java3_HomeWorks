@@ -84,9 +84,11 @@ public class EchoClient extends JFrame {
                         chatArea.append("Сейчас онлайн " + strFromServer);
                     } else {
                         // записываем сообщение в историю в отдельном потоке
-                        new Thread(() -> {
-                            writeToFile(strFromServer);
-                        }).start();
+                        if (strFromServer.startsWith("[")) {
+                            new Thread(() -> {
+                                writeToFile(strFromServer);
+                            }).start();
+                        }
                         chatArea.append(strFromServer);
                     }
                     chatArea.append("\n");

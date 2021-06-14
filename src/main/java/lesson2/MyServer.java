@@ -3,25 +3,44 @@ package lesson2;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
- * Непосредственно сервер
+ * Непосредственно сервер c управлением потоками через ExecutorService
  */
 public class MyServer {
 
-    private List<ClientHandler> clients;
+    private volatile List<ClientHandler> clients;
     private AuthService authService;
+    private final ExecutorService executorService;
 
     public MyServer() {
+        executorService = Executors.newCachedThreadPool();
         try (ServerSocket server = new ServerSocket(ChatConstants.PORT)) {
             authService = new DataBaseAuthService();
             authService.start();
             clients = new ArrayList<>();
+            // добавил возможность остановить сервер командой из консоли
+            executorService.execute(() -> {
+                Scanner scanner = new Scanner(System.in);
+                String string;
+                while (true) {
+                    string = scanner.nextLine();
+                    if (string.startsWith(ChatConstants.STOP_WORD)) {
+                        broadcastMessage("Сервер остановлен");
+                        closeConnections();
+                        try {
+                            server.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                }
+            });
             while (true) {
                 System.out.println("Сервер ожидает подключения");
                 Socket socket = server.accept();
@@ -34,11 +53,22 @@ public class MyServer {
             if (authService != null) {
                 authService.stop();
             }
+            executorService.shutdown();
+        }
+    }
+
+    public void closeConnections() {
+        for (int i = clients.size() - 1; i >= 0; i--) {
+            clients.get(i).closeConnection();
         }
     }
 
     public AuthService getAuthService() {
         return authService;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     public synchronized boolean isClientOnline(String nick) {
@@ -140,14 +170,17 @@ public class MyServer {
         // изначально в список адресатов пишем только отправителя
         List<String> nicknames = Collections.singletonList(name);
         // делаем заготовку сообщения от сервера
-        StringBuilder message = new StringBuilder().append("[" + ChatConstants.MSG_FROM_SERVER + "]: ");
+        StringBuilder message = new StringBuilder();
 
         if (splitMessage.size() < 2) { // если кроме команды /rename ничего нет то это нехорошо
+            message.append(ChatConstants.MSG_FROM_SERVER + " ");
             message.append("Новое имя не может быть пустым!");
         } else if (authService.isNickExist(splitMessage.get(1))) { // проверяем есть ли в БД ник на который нужно поменять
+            message.append(ChatConstants.MSG_FROM_SERVER + " ");
             message.append("<").append(splitMessage.get(1)).append("> этот ник уже используется");
         } else if (authService.changeNick(name, splitMessage.get(1))) { // если удалось поменять ник в БД меняем его в чате и оповещаем об этом всех
             clientHandler.setName(splitMessage.get(1));
+            message.append("[" + ChatConstants.MSG_FROM_SERVER + "]: ");
             message.append("Пользователь с ником <").append(name).append("> изменил ник на <").append(splitMessage.get(1)).append(">");
             nicknames = clients.stream().map(ClientHandler::getName).collect(Collectors.toList());
         }

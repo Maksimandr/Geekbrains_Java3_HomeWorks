@@ -25,18 +25,19 @@ public class ClientHandler {
             this.inputStream = new DataInputStream(socket.getInputStream());
             this.outputStream = new DataOutputStream(socket.getOutputStream());
             this.name = "";
-            new Thread(() -> {
+            server.getExecutorService().execute(() -> {
                 try {
                     authentication();
                     readMessages();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
+                    server.broadcastMessage(name + " вышел из чата");
                     closeConnection();
                 }
-            }).start();
+            });
             // поток закрывает соединение если вышел таймаут на подписку клиента
-            new Thread(() -> {
+            server.getExecutorService().execute(() -> {
                 long timeOut = System.currentTimeMillis();
                 while (true) {
                     try {
@@ -53,7 +54,7 @@ public class ClientHandler {
                         e.printStackTrace();
                     }
                 }
-            }).start();
+            });
         } catch (IOException ex) {
             System.out.println("Проблема при создании клиента");
         }
@@ -125,7 +126,6 @@ public class ClientHandler {
 
     public void closeConnection() {
         server.unsubscribe(this);
-        server.broadcastMessage(name + " вышел из чата");
         try {
             inputStream.close();
         } catch (IOException e) {

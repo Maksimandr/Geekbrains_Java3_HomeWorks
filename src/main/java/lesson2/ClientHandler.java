@@ -89,22 +89,23 @@ public class ClientHandler {
         while (true) {
             String message = inputStream.readUTF();
             if (message.startsWith(ChatConstants.AUTH_COMMAND)) {
-                String[] parts = message.split("\\s+");
-                Optional<String> nick = server.getAuthService().getNickByLoginAndPass(parts[1], parts[2]);
-                if (nick.isPresent()) {
-                    //проверим, что такого уже нет онлайн
-                    if (!server.isClientOnline(nick.get())) {
-                        sendMsg(ChatConstants.AUTH_OK + " " + nick);
-                        name = nick.get();
-                        server.subscribe(this);
-                        server.broadcastMessage(name + " вошел в чат");
-                        return;
-                    } else {
-                        sendMsg("Такой ник уже авторизован");
+                String[] splitStr = message.split("\\s+");
+                if (!(splitStr.length < 3)) {
+                    Optional<String> nick = server.getAuthService().getNickByLoginAndPass(splitStr[1], splitStr[2]);
+                    if (nick.isPresent()) {
+                        //проверим, что такого уже нет онлайн
+                        if (!server.isClientOnline(nick.get())) {
+                            sendMsg(ChatConstants.AUTH_OK + " " + splitStr[1]);
+                            name = nick.get();
+                            server.subscribe(this);
+                            server.broadcastMessage(name + " вошел в чат");
+                            return;
+                        } else {
+                            sendMsg("Такой ник уже авторизован");
+                        }
                     }
-                } else {
-                    sendMsg("Неверные логин/пароль");
                 }
+                sendMsg("Неверные логин/пароль");
             }
         }
     }

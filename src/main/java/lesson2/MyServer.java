@@ -1,5 +1,9 @@
 package lesson2;
 
+import lesson6.HomeWorkApp6;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -16,6 +20,7 @@ public class MyServer {
     private volatile List<ClientHandler> clients;
     private AuthService authService;
     private final ExecutorService executorService;
+    private static final Logger LOGGER = LogManager.getLogger(MyServer.class);
 
     public MyServer() {
         executorService = Executors.newCachedThreadPool();
@@ -30,11 +35,13 @@ public class MyServer {
                 while (true) {
                     string = scanner.nextLine();
                     if (string.startsWith(ChatConstants.STOP_WORD)) {
+                        LOGGER.info("Сервер получил команду на остановку {}", string);
                         broadcastMessage("Сервер остановлен");
                         closeConnections();
                         try {
                             server.close();
                         } catch (IOException e) {
+                            LOGGER.error(e);
                             e.printStackTrace();
                         }
                         break;
@@ -43,11 +50,14 @@ public class MyServer {
             });
             while (true) {
                 System.out.println("Сервер ожидает подключения");
+                LOGGER.info("Сервер ожидает подключения");
                 Socket socket = server.accept();
                 System.out.println("Клиент подключился");
+                LOGGER.info("Клиент подключился");
                 new ClientHandler(this, socket);
             }
         } catch (IOException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         } finally {
             if (authService != null) {
@@ -71,16 +81,22 @@ public class MyServer {
         return executorService;
     }
 
+    public Logger getLogger() {
+        return LOGGER;
+    }
+
     public synchronized boolean isClientOnline(String nick) {
         return clients.stream().anyMatch(client -> client.getName().equals(nick));
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
+        LOGGER.info("<{}> авторизовался", clientHandler.getName());
         clients.add(clientHandler);
         broadcastClients();
     }
 
     public synchronized void unsubscribe(ClientHandler clientHandler) {
+        LOGGER.info("<{}> отключился", clientHandler.getName());
         clients.remove(clientHandler);
         broadcastClients();
     }
@@ -112,6 +128,7 @@ public class MyServer {
                 splitMessage.stream()
                         .skip(nicknames.size() + 1)
                         .collect(Collectors.joining(" "));
+        LOGGER.info("<{}> отправил сообщение для <{}>", name, nicknames);
         sendToGroup(message, nicknames);
     }
 
@@ -130,6 +147,7 @@ public class MyServer {
                 splitMessage.stream()
                         .skip(nicknames.size() + 1)
                         .collect(Collectors.joining(" "));
+        LOGGER.info("<{}> отправил сообщение для <{}>", name, nicknames);
         sendToGroup(message, nicknames);
     }
 
@@ -175,14 +193,17 @@ public class MyServer {
         if (splitMessage.size() < 2) { // если кроме команды /rename ничего нет то это нехорошо
             message.append(ChatConstants.MSG_FROM_SERVER + " ");
             message.append("Новое имя не может быть пустым!");
+            LOGGER.info("<{}> пробует поменять имя на пустое", name);
         } else if (authService.isNickExist(splitMessage.get(1))) { // проверяем есть ли в БД ник на который нужно поменять
             message.append(ChatConstants.MSG_FROM_SERVER + " ");
             message.append("<").append(splitMessage.get(1)).append("> этот ник уже используется");
+            LOGGER.info("<{}> пробует поменять имя на уже занятое <{}>", name, splitMessage.get(1));
         } else if (authService.changeNick(name, splitMessage.get(1))) { // если удалось поменять ник в БД меняем его в чате и оповещаем об этом всех
             clientHandler.setName(splitMessage.get(1));
             message.append("[" + ChatConstants.MSG_FROM_SERVER + "]: ");
             message.append("Пользователь с ником <").append(name).append("> изменил ник на <").append(splitMessage.get(1)).append(">");
             nicknames = clients.stream().map(ClientHandler::getName).collect(Collectors.toList());
+            LOGGER.info("<{}> изменил ник на <{}>", name, splitMessage.get(1));
         }
         sendToGroup(message.toString(), nicknames);
     }

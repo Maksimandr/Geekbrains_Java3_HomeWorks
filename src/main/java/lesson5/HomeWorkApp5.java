@@ -15,9 +15,30 @@ import java.util.concurrent.locks.ReentrantLock;
 public class HomeWorkApp5 {
 
     public static final int CARS_COUNT = 4;
-    public static CyclicBarrier cyclicBarrier = new CyclicBarrier(CARS_COUNT + 1);
-    public static CountDownLatch countDownLatch = new CountDownLatch(CARS_COUNT);
-    public static Lock lock = new ReentrantLock();
+    private static CyclicBarrier cyclicBarrier = new CyclicBarrier(CARS_COUNT + 1);
+    private static CountDownLatch countDownLatch = new CountDownLatch(CARS_COUNT);
+    private static Lock lock = new ReentrantLock();
+    private static volatile boolean hasWinner = false;
+
+    public static CyclicBarrier getCyclicBarrier() {
+        return cyclicBarrier;
+    }
+
+    public static CountDownLatch getCountDownLatch() {
+        return countDownLatch;
+    }
+
+    public static Lock getLock() {
+        return lock;
+    }
+
+    public static boolean isHasWinner() {
+        return hasWinner;
+    }
+
+    public static void setHasWinner(boolean hasWinner) {
+        HomeWorkApp5.hasWinner = hasWinner;
+    }
 
     public static void main(String[] args) {
 

@@ -35,7 +35,7 @@ public class Car implements Runnable {
             Thread.sleep(500 + (int) (Math.random() * 800));
             System.out.println(this.name + " готов");
             // подтверждаем готовность к старту гоки
-            HomeWorkApp5.cyclicBarrier.await();
+            HomeWorkApp5.getCyclicBarrier().await();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -43,11 +43,12 @@ public class Car implements Runnable {
             race.getStages().get(i).go(this);
         }
         // по завершении гонки используем lock чтобы безопасно проверить финишировал ли уже кто-то до этого, если нет - победа
-        HomeWorkApp5.lock.lock();
-        if (HomeWorkApp5.countDownLatch.getCount() == HomeWorkApp5.CARS_COUNT) {
+        HomeWorkApp5.getLock().lock();
+        if (!HomeWorkApp5.isHasWinner()) {
+            HomeWorkApp5.setHasWinner(true);
             System.out.println(this.name + " - WIN");
         }
-        HomeWorkApp5.countDownLatch.countDown();
-        HomeWorkApp5.lock.unlock();
+        HomeWorkApp5.getCountDownLatch().countDown();
+        HomeWorkApp5.getLock().unlock();
     }
 }

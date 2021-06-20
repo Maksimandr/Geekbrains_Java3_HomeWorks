@@ -81,10 +81,6 @@ public class MyServer {
         return executorService;
     }
 
-    public Logger getLogger() {
-        return LOGGER;
-    }
-
     public synchronized boolean isClientOnline(String nick) {
         return clients.stream().anyMatch(client -> client.getName().equals(nick));
     }

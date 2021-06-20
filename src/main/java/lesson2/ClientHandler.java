@@ -1,5 +1,8 @@
 package lesson2;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,6 +18,7 @@ public class ClientHandler {
     private Socket socket;
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
+    private static final Logger LOGGER = LogManager.getLogger(ClientHandler.class);
 
     private String name;
 
@@ -30,7 +34,7 @@ public class ClientHandler {
                     authentication();
                     readMessages();
                 } catch (IOException e) {
-                    server.getLogger().error(e);
+                    LOGGER.error(e);
                     e.printStackTrace();
                 } finally {
                     server.broadcastMessage(name + " вышел из чата");
@@ -48,18 +52,18 @@ public class ClientHandler {
                             break;
                         } else if (System.currentTimeMillis() - timeOut > ChatConstants.CLIENT_AUTH_TIMEOUT) {
                             //если клиент не авторизовался и прошло больше 120 сек. закрываем соединение и завершаем поток
-                            server.getLogger().info("Вышел таймаут для авторизации");
+                            LOGGER.info("Вышел таймаут для авторизации");
                             closeConnection();
                             break;
                         }
                     } catch (InterruptedException e) {
-                        server.getLogger().error(e);
+                        LOGGER.error(e);
                         e.printStackTrace();
                     }
                 }
             });
         } catch (IOException e) {
-            server.getLogger().error(e);
+            LOGGER.error(e);
             System.out.println("Проблема при создании клиента");
         }
     }
@@ -72,22 +76,22 @@ public class ClientHandler {
             String messageFromClient = inputStream.readUTF();
             System.out.println("от " + name + ": " + messageFromClient);
             if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
-                server.getLogger().info("<{}> отправил команду {}", name, ChatConstants.STOP_WORD);
+                LOGGER.info("<{}> отправил команду {}", name, ChatConstants.STOP_WORD);
                 return;
             } else if (messageFromClient.startsWith(ChatConstants.SEND_TO_LIST)) {
-                server.getLogger().info("<{}> отправил команду {}", name, ChatConstants.SEND_TO_LIST);
+                LOGGER.info("<{}> отправил команду {}", name, ChatConstants.SEND_TO_LIST);
                 server.broadcastMessageToClients(messageFromClient, name);
             } else if (messageFromClient.startsWith(ChatConstants.PERSONAL_MSG)) {
-                server.getLogger().info("<{}> отправил команду {}", name, ChatConstants.PERSONAL_MSG);
+                LOGGER.info("<{}> отправил команду {}", name, ChatConstants.PERSONAL_MSG);
                 server.personalMessage(messageFromClient, name);
             } else if (messageFromClient.startsWith(ChatConstants.CLIENTS_LIST)) {
-                server.getLogger().info("<{}> отправил команду {}", name, ChatConstants.CLIENTS_LIST);
+                LOGGER.info("<{}> отправил команду {}", name, ChatConstants.CLIENTS_LIST);
                 server.broadcastClients();
             } else if (messageFromClient.startsWith(ChatConstants.CHANGE_NAME)) {
-                server.getLogger().info("<{}> отправил команду {}", name, ChatConstants.CHANGE_NAME);
+                LOGGER.info("<{}> отправил команду {}", name, ChatConstants.CHANGE_NAME);
                 server.changeClientName(messageFromClient, name, this);
             } else {
-                server.getLogger().info("<{}> отправил сообщение в чат", name);
+                LOGGER.info("<{}> отправил сообщение в чат", name);
                 server.broadcastMessage("[" + name + "]: " + messageFromClient);
             }
         }
@@ -112,12 +116,12 @@ public class ClientHandler {
                             server.broadcastMessage(name + " вошел в чат");
                             return;
                         } else {
-                            server.getLogger().warn("<{}> уже авторизован", nick.get());
+                            LOGGER.warn("<{}> уже авторизован", nick.get());
                             sendMsg("Такой ник уже авторизован");
                         }
                     }
                 }
-                server.getLogger().info("Неудачная попытка авторизации");
+                LOGGER.info("Неудачная попытка авторизации");
                 sendMsg("Неверные логин/пароль");
             }
         }
@@ -132,7 +136,7 @@ public class ClientHandler {
         try {
             outputStream.writeUTF(message);
         } catch (IOException e) {
-            server.getLogger().error(e);
+            LOGGER.error(e);
             e.printStackTrace();
         }
     }
@@ -142,19 +146,19 @@ public class ClientHandler {
         try {
             inputStream.close();
         } catch (IOException e) {
-            server.getLogger().error(e);
+            LOGGER.error(e);
             e.printStackTrace();
         }
         try {
             outputStream.close();
         } catch (IOException e) {
-            server.getLogger().error(e);
+            LOGGER.error(e);
             e.printStackTrace();
         }
         try {
             socket.close();
         } catch (IOException e) {
-            server.getLogger().error(e);
+            LOGGER.error(e);
             e.printStackTrace();
         }
     }

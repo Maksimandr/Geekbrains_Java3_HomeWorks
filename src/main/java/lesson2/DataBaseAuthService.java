@@ -1,6 +1,8 @@
 package lesson2;
 
 import model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.util.List;
@@ -13,6 +15,7 @@ public class DataBaseAuthService implements AuthService {
     private static final String DATABASE_URL = "jdbc:sqlite:javadb.db";
     private static Connection connection;
     private static Statement statement;
+    private static final Logger LOGGER = LogManager.getLogger(DataBaseAuthService.class);
 
     /**
      * В конструкторе задаем список клиентов для тестирования
@@ -33,6 +36,7 @@ public class DataBaseAuthService implements AuthService {
         try {
             statement.execute(createTable);
         } catch (SQLException e) {
+            LOGGER.error(e);
             System.out.println("Таблица видимо создана!");
             e.printStackTrace();
         }
@@ -54,6 +58,7 @@ public class DataBaseAuthService implements AuthService {
             }
             preparedStatement.executeBatch();
         } catch (SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
     }
@@ -68,11 +73,13 @@ public class DataBaseAuthService implements AuthService {
             connection = DriverManager.getConnection(DATABASE_URL);
             statement = connection.createStatement();
         } catch (ClassNotFoundException | SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
         createTable();
         insertNewClientPS(userList);
-        System.out.println(this.getClass().getName() + " server started");
+        LOGGER.info(this.getClass().getName() + " service started");
+        System.out.println(this.getClass().getName() + " service started");
     }
 
     /**
@@ -83,13 +90,16 @@ public class DataBaseAuthService implements AuthService {
         try {
             statement.close();
         } catch (SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
         try {
             connection.close();
         } catch (SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
+        LOGGER.info(this.getClass().getName() + " server stopped");
         System.out.println(this.getClass().getName() + " service stopped");
     }
 
@@ -112,6 +122,7 @@ public class DataBaseAuthService implements AuthService {
             }
             return Optional.ofNullable(resultSet.getString("nick"));
         } catch (SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
         return Optional.empty();
@@ -136,6 +147,7 @@ public class DataBaseAuthService implements AuthService {
                 return true;
             }
         } catch (SQLException e) {
+            LOGGER.error(e);
             System.out.println("Не удалось поменять ник!");
             e.printStackTrace();
         }
@@ -157,6 +169,7 @@ public class DataBaseAuthService implements AuthService {
             // если resultSet не пустой значит такой ник уже есть в БД
             return resultSet.next();
         } catch (SQLException e) {
+            LOGGER.error(e);
             e.printStackTrace();
         }
         return false;

@@ -17,9 +17,26 @@ public class TestClass {
         System.out.println("Тестируем метод 3 (priority = 3)");
     }
 
+    @ParametrizedCsvSource(parameters = {
+            "1, 1",
+            "2, 3",
+            "7, 5",
+            "4, 4"
+    })
     @Test(priority = 3)
-    public void testMethod4() {
-        System.out.println("Тестируем метод 4 (priority = 3)");
+    public void testMethod3(int a, int b) {
+        System.out.println("Тестируем метод 3 (priority = 3) с параметрами (int a = " + a + ", int b = " + b + "), результат = a + b = " + (a + b));
+    }
+
+    @ParametrizedCsvSource(parameters = {
+            "1, 1, 3",
+            "2, 3, 6",
+            "7, 5, 9",
+            "4, 4, 8"
+    })
+    @Test(priority = 3)
+    public void testMethod3(int a, int b, int c) {
+        System.out.println("Тестируем метод 3 (priority = 3) с параметрами (int a = " + a + ", int b = " + b + ", int c = " + c + "), результат = a + b + c = " + (a + b + c));
     }
 
     @Test(priority = 8)

@@ -24,6 +24,7 @@ public class HomeWorkApp7 {
         Class beforeSuiteClass = BeforeSuite.class;
         Class afterSuiteClass = AfterSuite.class;
         Class testClass = Test.class;
+        Class parametrizedCsvSourceClass = ParametrizedCsvSource.class;
 
         List<Annotation[]> annotationList = new ArrayList<>();
         Method[] methods = clazz.getDeclaredMethods();
@@ -76,11 +77,25 @@ public class HomeWorkApp7 {
             }
         }
 
-        //  создаем объект аласса TestClass через конструктор по умолчанию и вызываем все методы по очереди
+        //  создаем объект класса TestClass через конструктор по умолчанию и вызываем все методы по очереди
         try {
             TestClass calcTest = (TestClass) clazz.getConstructor().newInstance();
             for (Method m : methods) {
-                m.invoke(calcTest);
+                // если метод без параметров
+                if (!Arrays.stream(m.getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(parametrizedCsvSourceClass.getName()))) {
+                    m.invoke(calcTest);
+                } else {
+                    // если метод с параметрами типа int
+                    String[] strings = m.getAnnotation(ParametrizedCsvSource.class).parameters();
+                    for (String s : strings) {
+                        String[] splitStr = s.split(",");
+                        Integer[] integers = new Integer[splitStr.length];
+                        for (int i = 0; i < splitStr.length; i++) {
+                            integers[i] = Integer.parseInt(splitStr[i].trim());
+                        }
+                        m.invoke(calcTest, integers);
+                    }
+                }
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();

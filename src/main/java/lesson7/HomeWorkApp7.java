@@ -29,32 +29,29 @@ public class HomeWorkApp7 {
         Method[] methods = clazz.getDeclaredMethods();
         List<Method> methodList = new ArrayList<>();
 
-        for (int i = 0; i < methods.length; i++) {
-            if (methods[i].getAnnotation(beforeSuiteClass) != null) {
+        for (Method method : methods) {
+            if (method.getAnnotation(beforeSuiteClass) != null) {
                 if (beforeSuiteHolder != null) {
                     throw new RuntimeException("Аннотация BeforeSuite может быть только одна.");
                 }
-                beforeSuiteHolder = methods[i];
+                beforeSuiteHolder = method;
             }
-            if (methods[i].getAnnotation(afterSuiteClass) != null) {
+            if (method.getAnnotation(afterSuiteClass) != null) {
                 if (afterSuiteHolder != null) {
                     throw new RuntimeException("Аннотация AfterSuite может быть только одна.");
                 }
-                afterSuiteHolder = methods[i];
+                afterSuiteHolder = method;
             }
-            if (methods[i].getAnnotation(testClass) != null) {
-                methodList.add(methods[i]);
+            if (method.getAnnotation(testClass) != null) {
+                methodList.add(method);
             }
         }
 
         // сортируем список тестов по приоритету (1 - максимальный приоритет)
-        Collections.sort(methodList, new Comparator<Method>() {
-            @Override
-            public int compare(Method m1, Method m2) {
-                int p1 = m1.getAnnotation(testClass).priority();
-                int p2 = m2.getAnnotation(testClass).priority();
-                return Integer.compare(p1, p2);
-            }
+        methodList.sort((m1, m2) -> {
+            int p1 = m1.getAnnotation(testClass).priority();
+            int p2 = m2.getAnnotation(testClass).priority();
+            return Integer.compare(p1, p2);
         });
 
         // добавляем методы с аннотациями BeforeSuite и AfterSuite в начало и конец списка (если они есть)

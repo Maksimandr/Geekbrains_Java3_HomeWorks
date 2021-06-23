@@ -1,11 +1,8 @@
 package lesson7;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * 1. Создать класс, который может выполнять «тесты», в качестве тестов выступают классы с наборами методов
@@ -19,74 +16,65 @@ import java.util.List;
  */
 public class HomeWorkApp7 {
 
+    private static final Class<BeforeSuite> beforeSuiteClass = BeforeSuite.class;
+    private static final Class<AfterSuite> afterSuiteClass = AfterSuite.class;
+    private static final Class<Test> testClass = Test.class;
+    private static final Class<ParametrizedCsvSource> parametrizedCsvSourceClass = ParametrizedCsvSource.class;
+
     public static void start(Class clazz) {
 
-        Class beforeSuiteClass = BeforeSuite.class;
-        Class afterSuiteClass = AfterSuite.class;
-        Class testClass = Test.class;
-        Class parametrizedCsvSourceClass = ParametrizedCsvSource.class;
+        Method beforeSuiteHolder = null;
+        Method afterSuiteHolder = null;
 
-        List<Annotation[]> annotationList = new ArrayList<>();
         Method[] methods = clazz.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++) {
-            annotationList.add(methods[i].getDeclaredAnnotations());
-        }
+        List<Method> methodList = new ArrayList<>();
 
-        // аннотации @BeforeSuite и @AfterSuite должны присутствовать в единственном экземпляре
-        if (annotationList.stream().map(a -> Arrays.toString(a)).filter(a -> a.contains(beforeSuiteClass.getName())).count() > 1) {
-            throw new RuntimeException("Аннотация BeforeSuite может быть только одна.");
-        } else if (annotationList.stream().map(a -> Arrays.toString(a)).filter(a -> a.contains(afterSuiteClass.getName())).count() > 1) {
-            throw new RuntimeException("Аннотация AfterSuite может быть только одна.");
-        }
-
-        // если аннотация @BeforeSuite присутствует, ставим метод которому она принадлежит в начало
         for (int i = 0; i < methods.length; i++) {
-            if (Arrays.stream(methods[i].getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(beforeSuiteClass.getName()))) {
-                if (i != 0) {
-                    Method temp = methods[0];
-                    methods[0] = methods[i];
-                    methods[i] = temp;
+            if (methods[i].getAnnotation(beforeSuiteClass) != null) {
+                if (beforeSuiteHolder != null) {
+                    throw new RuntimeException("Аннотация BeforeSuite может быть только одна.");
                 }
-                break;
+                beforeSuiteHolder = methods[i];
+            }
+            if (methods[i].getAnnotation(afterSuiteClass) != null) {
+                if (afterSuiteHolder != null) {
+                    throw new RuntimeException("Аннотация AfterSuite может быть только одна.");
+                }
+                afterSuiteHolder = methods[i];
+            }
+            if (methods[i].getAnnotation(testClass) != null) {
+                methodList.add(methods[i]);
             }
         }
 
-        // если аннотация @AfterSuite присутствует, ставим метод которому она принадлежит в конец
-        for (int i = 0; i < methods.length; i++) {
-            if (Arrays.stream(methods[i].getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(afterSuiteClass.getName()))) {
-                if (i != methods.length - 1) {
-                    Method temp = methods[methods.length - 1];
-                    methods[methods.length - 1] = methods[i];
-                    methods[i] = temp;
-                }
-                break;
+        // сортируем список тестов по приоритету (1 - максимальный приоритет)
+        Collections.sort(methodList, new Comparator<Method>() {
+            @Override
+            public int compare(Method m1, Method m2) {
+                int p1 = m1.getAnnotation(testClass).priority();
+                int p2 = m2.getAnnotation(testClass).priority();
+                return Integer.compare(p1, p2);
             }
-        }
+        });
 
-        // все методы у которых есть аннотация @Test сортируем по приоритету от 1 до 10 (1 - максимальный приоритет)
-        for (int i = 0; i < methods.length - 1; i++) {
-            for (int j = i + 1; j < methods.length; j++) {
-                if (Arrays.stream(methods[i].getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(testClass.getName()))
-                        & Arrays.stream(methods[j].getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(testClass.getName()))) {
-                    if (methods[i].getAnnotation(Test.class).priority() > methods[j].getAnnotation(Test.class).priority()) {
-                        Method temp = methods[i];
-                        methods[i] = methods[j];
-                        methods[j] = temp;
-                    }
-                }
-            }
+        // добавляем методы с аннотациями BeforeSuite и AfterSuite в начало и конец списка (если они есть)
+        if (beforeSuiteHolder != null) {
+            methodList.add(0, beforeSuiteHolder);
+        }
+        if (afterSuiteHolder != null) {
+            methodList.add(afterSuiteHolder);
         }
 
         //  создаем объект класса TestClass через конструктор по умолчанию и вызываем все методы по очереди
         try {
             TestClass calcTest = (TestClass) clazz.getConstructor().newInstance();
-            for (Method m : methods) {
+            for (Method m : methodList) {
                 // если метод без параметров
-                if (!Arrays.stream(m.getDeclaredAnnotations()).map(a -> a.toString()).anyMatch(a -> a.contains(parametrizedCsvSourceClass.getName()))) {
+                if (m.getAnnotation(parametrizedCsvSourceClass) == null) {
                     m.invoke(calcTest);
                 } else {
                     // если метод с параметрами типа int
-                    String[] strings = m.getAnnotation(ParametrizedCsvSource.class).parameters();
+                    String[] strings = m.getAnnotation(parametrizedCsvSourceClass).parameters();
                     for (String s : strings) {
                         String[] splitStr = s.split(",");
                         Integer[] integers = new Integer[splitStr.length];
